@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Notes</string>
+    <string name="fa_list_ul">&#xf0ca;</string>
+    <string name="fa_th_large">&#xf009;</string>
+    <string name="fa_angle_left">&#xf104;</string>
+    <string name="fa_check">&#xf00c;</string>
+
 </resources>
