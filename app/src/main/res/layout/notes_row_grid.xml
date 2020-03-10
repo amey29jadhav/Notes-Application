@@ -3,16 +3,23 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:padding="5dp"
     android:layout_height="wrap_content">
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/rounded_corner"
-        android:padding="5dp"
+        android:background="@drawable/white_rounded"
         android:orientation="vertical">
+        <RelativeLayout
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:padding="15dp"
+            android:layout_height="wrap_content">
         <TextView
             android:id="@+id/monthname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:textSize="12sp"></TextView>
 
         <TextView
@@ -20,6 +27,7 @@
             android:layout_below="@+id/monthname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
             android:textSize="12sp"></TextView>
 
         <TextView
@@ -28,7 +36,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"></TextView>
+        </RelativeLayout>
 
-    </LinearLayout>
+    </RelativeLayout>
 
 </LinearLayout>

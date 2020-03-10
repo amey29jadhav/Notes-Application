@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="10dp"
+    android:background="@color/light_gray"
     tools:context=".MainActivity">
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/my_toolbar"
@@ -30,9 +30,9 @@
                 android:id="@+id/viewtypetextview"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Notes"
                 android:textColor="@color/black"
                 android:textSize="20sp"
+                android:layout_marginRight="10dp"
                 android:layout_centerHorizontal="true"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
@@ -45,6 +45,7 @@
                 android:textColor="@color/black"
                 android:textSize="20sp"
                 android:layout_centerHorizontal="true"
+                android:layout_marginRight="10dp"
                 android:layout_alignParentRight="true"
                 android:layout_centerVertical="true"
                 android:visibility="invisible"
@@ -52,11 +53,40 @@
         </RelativeLayout>
 
     </androidx.appcompat.widget.Toolbar>
+    <RelativeLayout
+        android:layout_below="@+id/my_toolbar"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Button
+            android:id="@+id/btnStart"
+            android:text="Start"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"></Button>
+        <Button
+            android:id="@+id/btnStop"
+            android:text="Stop"
+            android:layout_toRightOf="@+id/btnStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"></Button>
+    </RelativeLayout>
+    <RelativeLayout
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:layout_below="@+id/my_toolbar"
+        >
+    </RelativeLayout>
 
-
+<RelativeLayout
+    android:layout_below="@+id/my_toolbar"
+    android:layout_width="match_parent"
+    android:padding="10dp"
+    android:layout_height="match_parent"
+    android:visibility="gone">
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchview"
-        android:layout_below="@+id/my_toolbar"
         android:background="@drawable/bg_white_rounded"
         android:layout_width="match_parent"
         app:queryHint="Search notes"
@@ -68,6 +98,7 @@
         android:layout_below="@+id/searchview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="10dp"
         android:scrollbars="none" />
 
     <RelativeLayout
@@ -87,4 +118,7 @@
         android:layout_alignParentRight="true"
         app:elevation="6dp"
         app:pressedTranslationZ="12dp"/>
+
+
+</RelativeLayout>
 </RelativeLayout>

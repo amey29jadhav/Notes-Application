@@ -8,12 +8,14 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.amey.notes.Database.AddNotesTable;
 import com.amey.notes.Database.DBHelper;
@@ -25,6 +27,15 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
+
 public class AddNotesActivity extends AppCompatActivity {
 
     TextView datetimetextview, charactercount, headertextview, savetextview;
@@ -34,7 +45,22 @@ public class AddNotesActivity extends AppCompatActivity {
     private Typeface fontAwesomeFont;
     private TextView backtextview;
     private String id;
-    AddNotesTable addNotesTable;
+    AddNotesTable notesModel;
+    CompositeDisposable disposable = new CompositeDisposable();
+//    Observable<Integer> serverDownloadObservable = Observable.create(
+//            emitter -> {
+//                //SystemClock.sleep(5000); // simulate delay
+//                saveNote();
+//                emitter.onNext(5);
+//                emitter.onComplete();
+//    });
+
+    Observable<AddNotesTable> addNotesTableObservable = Observable.create(e -> {
+        saveNote();
+        e.onNext(new AddNotesTable());
+        e.onComplete();
+    });
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,23 +78,18 @@ public class AddNotesActivity extends AppCompatActivity {
 
         if(!TextUtils.isEmpty(id)){
             try {
-                addNotesTable = DBHelper.getHelperInstance(this).getNotesDao().queryBuilder().where().eq("id", id).queryForFirst();
-                init(addNotesTable);
+                notesModel = DBHelper.getHelperInstance(this).getNotesDao().queryBuilder().where().eq("id", id).queryForFirst();
+                init();
             }catch (Exception e){
                 System.out.println();
             }
         }else {
-
             init();
         }
 
     }
 
-    private void init(AddNotesTable... notesTables) {
-        if(notesTables.length>0) {
-
-            AddNotesTable notesTable = notesTables[0];
-        }
+    private void init() {
 
         toolbar = (Toolbar) findViewById(R.id.my_toolbar);
 
@@ -86,15 +107,14 @@ public class AddNotesActivity extends AppCompatActivity {
         headertextview = (TextView) findViewById(R.id.headertextview);
         headertextview.setText("Add Notes");
 
+
         datetimetextview = (TextView) findViewById(R.id.datetimetextview);
         Calendar localCalendar = Calendar.getInstance(TimeZone.getDefault());
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("d MMMM h:mm a");
         String currentdate=dateFormat.format(localCalendar.getTime());
-        datetimetextview.setText(currentdate);
 
         charactercount = (TextView) findViewById(R.id.charactercount);
-        charactercount.setText("0 characters");
 
         message_edittext = (EditText)findViewById(R.id.message_edittext);
         message_edittext.addTextChangedListener(new TextWatcher() {
@@ -120,29 +140,56 @@ public class AddNotesActivity extends AppCompatActivity {
         savetextview.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String id = UUID.randomUUID().toString();
-                saveNote(id);
+                //testObservable();
+                saveNote();
 
             }
         });
+        if(notesModel != null) {
+
+            message_edittext.setText(notesModel.title);
+            message_edittext.setSelection(notesModel.title.length());
+            charactercount.setText(Integer.toString(notesModel.title.length()) + " " + "characters");
+            datetimetextview.setText(notesModel.time);
+            id = notesModel._id;
+
+        }else{
+            message_edittext.setText("");
+            charactercount.setText("0 characters");
+            datetimetextview.setText(currentdate);
+            notesModel = new AddNotesTable();
+            id = UUID.randomUUID().toString();
+
+
+
+        }
     }
 
-    private void saveNote(String id){
-        AddNotesTable addNotesTable = new AddNotesTable();
-        addNotesTable._id = id;
-        addNotesTable.monthname = "october";
-        if( message_edittext.getText() != null && !TextUtils.isEmpty(message_edittext.getText().toString())) {
-            addNotesTable.title = message_edittext.getText().toString();
-        }else{
+    private void testObservable() {
+       Disposable subscribe = addNotesTableObservable.observeOn(AndroidSchedulers.mainThread()).subscribeOn(Schedulers.io()).subscribe(integer -> {
+            finish();
+           Toast.makeText(this, "Success " , Toast.LENGTH_SHORT).show();
+        });
+       disposable.add(subscribe);
+    }
 
+    private void saveNote(){
+        //AddNotesTable addNotesTable = new AddNotesTable();
+        notesModel._id = id;
+        notesModel.monthname = "october";
+        if( message_edittext.getText() != null && !TextUtils.isEmpty(message_edittext.getText().toString()) && message_edittext.getText().toString().length() > 0) {
+            notesModel.title = message_edittext.getText().toString();
+        }else{
+            Toast.makeText(this,"Please Enter Title", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         if((datetimetextview.getText() != null) && !TextUtils.isEmpty(datetimetextview.getText().toString())){
-            addNotesTable.time =  datetimetextview.getText().toString();
+            notesModel.time =  datetimetextview.getText().toString();
         }
 
         try {
-            DBHelper.getHelperInstance(AddNotesActivity.this).getNotesDao().createIfNotExists(addNotesTable);
+            DBHelper.getHelperInstance(AddNotesActivity.this).getNotesDao().createOrUpdate(notesModel);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -150,6 +197,14 @@ public class AddNotesActivity extends AppCompatActivity {
         Intent returnIntent = new Intent();
         setResult(Activity.RESULT_OK, returnIntent);
         finish();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (disposable!=null && !disposable.isDisposed()) {
+            disposable.dispose();
+        }
     }
 
     @Override

@@ -13,7 +13,7 @@ import java.sql.SQLException;
 public class DBHelper extends OrmLiteSqliteOpenHelper {
 
     public static final String DB_NAME = "notes_manager.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
     private static Dao<AddNotesTable, Integer> daoNotes;
     private final Context myContext;
     private static DBHelper ormLiteHelper  = null;

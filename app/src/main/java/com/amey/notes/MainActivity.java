@@ -5,6 +5,8 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -15,6 +17,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.opengl.Visibility;
 import android.os.Bundle;
 import android.view.Menu;
@@ -22,6 +25,7 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -30,9 +34,11 @@ import com.amey.notes.Database.DBHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NotesFragment.OnFragmentInteractionListener {
 
     private Toolbar toolbar;
     RelativeLayout optionscontainer;
@@ -42,9 +48,12 @@ public class MainActivity extends AppCompatActivity {
     Context context;
      RecyclerView recycler_view;
     private RecyclerView.LayoutManager layoutManager;
-    private RecyclerView.Adapter mAdapter;
+    private NotesAdapter mAdapter;
     List<AddNotesTable> lstAddnotesTable;
     private Typeface fontAwesomeFont;
+    ArrayList<String> arrayList;
+    Button btnStart, btnStop;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +65,17 @@ public class MainActivity extends AppCompatActivity {
         }
             context = this;
 
+         FragmentManager fragmentManager = getSupportFragmentManager();
+         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+         NotesFragment notesFragment = new NotesFragment();
+         fragmentTransaction.add(R.id.fragment_container,notesFragment, "notesFragment");
+         fragmentTransaction.addToBackStack(null);
+         fragmentTransaction.commit();
+
+
         init();
+        createObservable();
 
         optionscontainer = (RelativeLayout)findViewById(R.id.optionscontainer);
         headertextview = (TextView)findViewById(R.id.headertextview);
@@ -81,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         recycler_view.setLayoutManager(linearLayoutManager);
         //recycler_view.setItemAnimator(new DefaultItemAnimator());
-        recycler_view.addItemDecoration(new DividerItemDecoration(context, LinearLayoutManager.HORIZONTAL));
+        //recycler_view.addItemDecoration(new DividerItemDecoration(context, LinearLayoutManager.HORIZONTAL));
         recycler_view.setAdapter(mAdapter);
 
         /***
@@ -93,6 +112,23 @@ public class MainActivity extends AppCompatActivity {
        animation = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.bottom_to_original);
         optionscontainer .setAnimation(animation);
+    }
+
+    public void startService(){
+        Intent intent = new Intent(this,MyService.class);
+        this.startService(intent);
+    }
+
+    public void stopService(){
+        Intent intent = new Intent(this,MyService.class);
+        this.stopService(intent);
+
+    }
+
+
+
+    private void createObservable() {
+
     }
 
     void getData(){
@@ -123,8 +159,10 @@ public class MainActivity extends AppCompatActivity {
                 //mAdapter = new NotesAdapter(context,lstAddnotesTable,AppSettings.Orientation.GridView);
                 GridLayoutManager mGridLayoutManager = new GridLayoutManager(MainActivity.this, 2);
                 recycler_view.setLayoutManager(mGridLayoutManager);
+                mAdapter = new NotesAdapter(MainActivity.this,context,lstAddnotesTable, AppSettings.Orientation.GridView);
+
                 //recycler_view.addItemDecoration(new SpacesItemDecoration(10));
-                //recycler_view.setAdapter(mAdapter);
+                recycler_view.setAdapter(mAdapter);
             }
         });
 
@@ -136,6 +174,9 @@ public class MainActivity extends AppCompatActivity {
                 recycler_view.setLayoutManager(linearLayoutManager);
                 viewtypetextview.setVisibility(View.VISIBLE);
                 gridtypetextview.setVisibility(View.INVISIBLE);
+                mAdapter = new NotesAdapter(MainActivity.this,context,lstAddnotesTable, AppSettings.Orientation.ListView);
+                recycler_view.setAdapter(mAdapter);
+
 
 
 
@@ -148,9 +189,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-
-
-
                 Intent intent = new Intent(context,AddNotesActivity.class);
                 startActivityForResult(intent,1);
             }
@@ -158,8 +196,41 @@ public class MainActivity extends AppCompatActivity {
 
         searchView = (SearchView) findViewById(R.id.searchview);
         searchView.setIconified(false);
-        searchView.setFocusable(true);
-        searchView.requestFocus();
+        searchView.clearFocus();
+        //searchView.setFocusable(false);
+        //searchView.requestFocus();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                mAdapter.getFilter().filter(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                mAdapter.getFilter().filter(newText);
+
+                return true;
+            }
+        });
+
+        btnStart = (Button) findViewById(R.id.btnStart);
+        btnStop = (Button) findViewById(R.id.btnStop);
+
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startService();
+            }
+        });
+
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                stopService();
+            }
+        });
+
     }
 
     /**
@@ -183,11 +254,58 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
             if(requestCode ==1){
                 if(resultCode == Activity.RESULT_OK){
+                    if(data != null && data.getExtras() != null){
+                       AppSettings.Orientation orientation  = (AppSettings.Orientation) data.getSerializableExtra("viewtype");
+                        System.out.println(orientation);
+                    }
                     getData();
                     recycler_view.setAdapter(mAdapter);
 
                 }
 
             }
+    }
+
+    @Override
+    public void onFragmentInteraction(Uri uri) {
+
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        NotesFragment2 notesFragment = new NotesFragment2();
+        fragmentTransaction.replace(R.id.fragment_container,notesFragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+
+    }
+
+    public abstract class cellularplan {
+        protected double rate;
+        abstract void getRate();
+        public void processBill(int minutes){
+            System.out.println(minutes*rate);
+        }
+    }
+
+    public class A{
+        public void a(){
+
+        }
+    }
+    public class abcNetwork extends A{
+        public void getRate(){
+            this.a();
+        }
+    }
+    public class B{
+        abcNetwork _abcNetwork;
+        A a;
+        public B(){
+            a = new abcNetwork();
+
+
+        }
+
     }
 }

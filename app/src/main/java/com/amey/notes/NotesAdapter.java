@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -12,20 +14,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.amey.notes.Database.AddNotesTable;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.ViewHolder> {
+public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.ViewHolder>  implements Filterable {
 
     List<AddNotesTable> notesTable;
     private final Context context;
     private AppSettings.Orientation orientation;
     private MainActivity mainActivity;
+    List<AddNotesTable> filternotestable;
 
     public NotesAdapter(MainActivity mainActivity, Context context, List<AddNotesTable> notesTable, AppSettings.Orientation orientation){
         this.mainActivity = mainActivity;
         this.context = context;
         this.notesTable = notesTable;
         this.orientation = orientation;
+        this.filternotestable = notesTable;
     }
 
     @NonNull
@@ -42,7 +47,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        final AddNotesTable notes = notesTable.get(position);
+        final AddNotesTable notes = filternotestable.get(position);
         holder.monthname.setVisibility(View.GONE);
         holder.title.setText( notes.title);
         holder.monthname.setText(notes.monthname);
@@ -60,7 +65,49 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return notesTable.size();
+        if(filternotestable != null & filternotestable.size() > 0) {
+            return filternotestable.size();
+        }else{
+            return 0;
+        }
+    }
+
+    @Override
+    public Filter getFilter() {
+        return new Filter() {
+            @Override
+            protected FilterResults performFiltering(CharSequence charSequence) {
+                String charString = charSequence.toString();
+                if (charString.isEmpty()) {
+                    filternotestable = notesTable;
+                } else {
+                    List<AddNotesTable> filteredList = new ArrayList<>();
+                    for (AddNotesTable row : notesTable) {
+
+                        // name match condition. this might differ depending on your requirement
+                        // here we are looking for name or phone number match
+                        if (row.title.toLowerCase().contains(charString.toLowerCase())) {
+                            filteredList.add(row);
+                        }
+                    }
+
+                    filternotestable = filteredList;
+                }
+
+                FilterResults filterResults = new FilterResults();
+                filterResults.values = filternotestable;
+                filterResults.count = filternotestable.size();
+                return filterResults;
+            }
+
+
+            @Override
+            protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
+                filternotestable = (ArrayList<AddNotesTable>) filterResults.values;
+                notifyDataSetChanged();
+            }
+        };
+
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {

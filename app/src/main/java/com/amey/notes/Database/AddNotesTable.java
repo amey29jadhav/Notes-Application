@@ -21,6 +21,7 @@ public class AddNotesTable {
     @DatabaseField(columnName = "time")
     public String time;
 
+
     public AddNotesTable(){}
 
     public AddNotesTable(JSONObject jsonObject){
