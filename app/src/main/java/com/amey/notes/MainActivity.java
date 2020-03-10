@@ -112,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements NotesFragment.OnF
        animation = AnimationUtils.loadAnimation(getApplicationContext(),
                 R.anim.bottom_to_original);
         optionscontainer .setAnimation(animation);
+        //checking git checkout method
     }
 
     public void startService(){
